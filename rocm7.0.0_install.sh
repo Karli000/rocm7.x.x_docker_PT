@@ -12,7 +12,7 @@ sudo usermod -aG docker,video,render "$TARGET_USER"
 sudo usermod -aG docker,video,render root
 
 wget https://repo.radeon.com/amdgpu/7.0/ubuntu/pool/main/a/amdgpu-insecure-instinct-udev-rules/amdgpu-insecure-instinct-udev-rules_30.10.0.0-2204008.24.04_all.deb
-sudo apt install -y ./amdgpu-insecure-instinct-udev-rules_30.10.0.0-2204008.24.04_all.deb
+sudo apt install -y --allow-downgrades ./amdgpu-insecure-instinct-udev-rules_30.10.0.0-2204008.24.04_all.deb
 
 echo "=== Schritt 3: ROCm Repository hinzufügen und ROCm installieren ==="
 sudo mkdir -p /etc/apt/keyrings
