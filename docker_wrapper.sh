@@ -19,12 +19,12 @@ else
 fi
 
 echo "=== Schritt 1: AMD-Docker Wrapper installieren ==="
-sudo rm -f /usr/local/bin/docker
+sudo rm -f /usr/local/bin/docker /bin/docker
 sudo tee /usr/local/bin/docker > /dev/null <<'EOF'
 #!/bin/sh
-DEFAULT_FLAGS="--device /dev/kfd --device /dev/dri --group-add video --group-add render"
+# Wrapper für AMD GPUs
 
-# Echte Docker-Binary finden
+# Finde echte Docker-Binary
 if [ -x /usr/bin/docker ]; then
     REAL_DOCKER=/usr/bin/docker
 elif [ -x /bin/docker ]; then
@@ -34,13 +34,19 @@ else
     exit 1
 fi
 
-# Prüfen, ob 'run'
+# Standard-GPU-Geräte prüfen
+FLAGS=""
+[ -e /dev/kfd ] && FLAGS="$FLAGS --device /dev/kfd"
+[ -e /dev/dri/card0 ] && FLAGS="$FLAGS --device /dev/dri/card0"
+[ -e /dev/dri/renderD128 ] && FLAGS="$FLAGS --device /dev/dri/renderD128"
+FLAGS="$FLAGS --group-add video --group-add render"
+
+# Symlink setzen
+[ ! -L /bin/docker ] && sudo ln -sf /usr/local/bin/docker /bin/docker
+
+# Wenn 'run' aufgerufen, füge GPU-Flags hinzu
 if [ "$1" = "run" ]; then
     shift
-    FLAGS=""
-    for f in $DEFAULT_FLAGS; do
-        echo "$@" | grep -q -- "$f" || FLAGS="$FLAGS $f"
-    done
     exec "$REAL_DOCKER" run $FLAGS "$@"
 else
     exec "$REAL_DOCKER" "$@"
