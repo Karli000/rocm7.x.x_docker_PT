@@ -36,9 +36,10 @@ bash <(curl -s https://raw.githubusercontent.com/Karli000/rocm7.x.x_docker_PT/ma
 ```
 
 ```
+#test
 ls -l /dev/kfd && ls -l /dev/dri && rocminfo && clinfo
 ```
 ```
-#test
+#container-test
 bash <(curl -s https://raw.githubusercontent.com/Karli000/rocm7.x.x_docker_PT/main/docker_test.sh)
 ```
