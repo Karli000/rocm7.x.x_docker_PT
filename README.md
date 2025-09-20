@@ -26,6 +26,6 @@ After reboot, you can use `docker run` as usual. The wrapper automatically ensur
 
 - Access to `/dev/kfd` and `/dev/dri`
 - Group permissions for `video` and `render`
-````
+```
 ls -l /dev/kfd && ls -l /dev/dri && rocminfo && clinfo
 ```
