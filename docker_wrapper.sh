@@ -45,6 +45,3 @@ fi
 
 exec "$REAL_DOCKER" run "${EXTRA_FLAGS[@]}" "$@"
 EOF
-
-sudo chmod +x /usr/local/bin/docker
-hash -d docker
