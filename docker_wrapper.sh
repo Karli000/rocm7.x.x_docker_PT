@@ -15,10 +15,9 @@ else
   echo "Docker ist bereits installiert."
 fi
 
+echo "=== Schritt 2: Docker-Wrapper mit Group-IDs, Security-Opt und Pfad-Erkennung ==="
 sudo tee /usr/local/bin/docker > /dev/null << 'EOF'
 #!/bin/bash
-
-# Docker-Wrapper mit Group-IDs, Security-Opt und Pfad-Erkennung
 
 # Finde den echten Docker-Pfad (ignoriere /usr/local/bin)
 REAL_DOCKER=$(which -a docker | grep -v "^/usr/local/bin/" | head -n1)
@@ -71,5 +70,43 @@ hash -d docker 2>/dev/null || true
 echo "✅ Docker-Wrapper installiert!"
 echo "🚀 Starte automatischen Test..."
 
-# Starte den Container-Test
-bash <(curl -s https://raw.githubusercontent.com/Karli000/rocm7.x.x_docker_PT/main/docker_test.sh)
+echo "=== Schritt 3: Host-ROCm-Version auslesen ==="
+if ! command -v dpkg-query &> /dev/null || ! dpkg-query -W rocm &> /dev/null; then
+    echo "ROCm ist auf dem Host nicht installiert. Bitte zuerst ROCm installieren."
+    exit 1
+fi
+ROCM_VER=$(dpkg-query -W -f='${Version}' rocm | cut -d'.' -f1-3)
+echo "Verwende ROCm Version $ROCM_VER für den Container"
+
+echo "=== Schritt 3: Dockerfile für ROCm-Test erstellen ==="
+cat <<EOF > Dockerfile.rocmtest
+FROM ubuntu:24.04
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt update && apt install -y wget gnupg2 software-properties-common clinfo pciutils && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /etc/apt/keyrings && \\
+    wget -qO - https://repo.radeon.com/rocm/rocm.gpg.key | gpg --dearmor | tee /etc/apt/keyrings/rocm.gpg > /dev/null && \\
+    echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/rocm.gpg] https://repo.radeon.com/rocm/apt/$ROCM_VER noble main" > /etc/apt/sources.list.d/rocm.list && \\
+    apt update && apt install -y rocminfo && rm -rf /var/lib/apt/lists/*
+
+CMD ["/bin/bash"]
+EOF
+
+echo "=== Schritt 4: Container-Image bauen ==="
+docker build -t rocm-test -f Dockerfile.rocmtest .
+
+echo "=== Schritt 5: Container starten und Tools testen ==="
+docker run -it --rm rocm-test bash -c "
+echo '--- /dev/kfd ---'
+ls -l /dev/kfd || echo 'Nicht vorhanden'
+
+echo '--- /dev/dri ---'
+ls -l /dev/dri || echo 'Nicht vorhanden'
+
+echo '--- rocminfo ---'
+rocminfo || echo 'rocminfo fehlgeschlagen'
+
+echo '--- clinfo ---'
+clinfo || echo 'clinfo fehlgeschlagen'
+"
