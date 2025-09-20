@@ -32,9 +32,9 @@ sudo apt update
 EOF
 
 wget https://repo.radeon.com/amdgpu-install/7.0.1/ubuntu/noble/amdgpu-install_7.0.1.70001-1_all.deb
-sudo apt install ./amdgpu-install_7.0.1.70001-1_all.deb
+sudo apt install -y ./amdgpu-install_7.0.1.70001-1_all.deb
 sudo apt update
-python3-setuptools python3-wheel
+sudo apt install -y python3-setuptools python3-wheel
 sudo apt install -y "linux-headers-$(uname -r)" "linux-modules-extra-$(uname -r)"
 sudo apt install -y amdgpu-dkms rocm rocm-opencl-runtime
 
