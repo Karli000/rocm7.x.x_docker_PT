@@ -14,7 +14,7 @@ sudo usermod -aG docker,video,render root
 
 sudo apt update
 wget https://repo.radeon.com/amdgpu/30.10.1/ubuntu/pool/main/a/amdgpu-insecure-instinct-udev-rules/amdgpu-insecure-instinct-udev-rules_30.10.1.0-2212064.24.04_all.deb
-sudo apt install --allow-downgrades -y ./amdgpu-insecure-instinct-udev-rules_30.10.1.0-2212064.24.04_all.deb
+sudo apt install ./amdgpu-insecure-instinct-udev-rules_30.10.1.0-2212064.24.04_all.deb
 
 echo "=== Schritt 3: ROCm Repository hinzufügen und ROCm installieren ==="
 sudo mkdir -p /etc/apt/keyrings
@@ -37,13 +37,12 @@ sudo apt install ./amdgpu-install_7.0.1.70001-1_all.deb
 sudo apt install -y amdgpu-dkms rocm rocm-opencl-runtime
 
 echo "=== Schritt 4: ROCm Pfade konfigurieren ==="
-
-for path in /opt/rocm/lib /opt/rocm/lib64; do
-    grep -qx "$path" /etc/ld.so.conf.d/rocm.conf || echo "$path" | sudo tee -a /etc/ld.so.conf.d/rocm.conf > /dev/null
-done
+sudo tee --append /etc/ld.so.conf.d/rocm.conf <<EOF
+/opt/rocm/lib
+/opt/rocm/lib64
+EOF
 
 sudo ldconfig
-
 
 sudo tee /etc/profile.d/rocm.sh > /dev/null <<EOF
 export PATH=\$PATH:/opt/rocm-7.0.1/bin
@@ -53,76 +52,47 @@ EOF
 source /etc/profile.d/rocm.sh
 
 echo "=== Schritt 5: AMD-Docker Wrapper installieren ==="
-sudo tee /usr/local/bin/amd-docker > /dev/null <<'EOF'
-#!/bin/bash
 
-REAL_DOCKER="$(command -v docker | grep -v /usr/local/bin/amd-docker || true)"
-[ -z "$REAL_DOCKER" ] && [ -x /usr/bin/docker ] && REAL_DOCKER="/usr/bin/docker"
-[ -z "$REAL_DOCKER" ] && [ -x /bin/docker ] && REAL_DOCKER="/bin/docker"
-[ -z "$REAL_DOCKER" ] && echo "❌ Docker binary not found!" >&2 && exit 1
+# 🔄 Vorherige Version löschen, falls vorhanden
+sudo rm -f /usr/local/bin/docker
 
-contains_flag() {
-    local flag="$1"; shift
-    for arg in "$@"; do [[ "$arg" == "$flag"* ]] && return 0; done
-    return 1
-}
+# 🆕 Neue Datei schreiben
+sudo tee /usr/local/bin/docker > /dev/null <<'EOF'
+#!/bin/sh
+# -------------------------------
+# Docker Wrapper
+# -------------------------------
 
-if [ "$1" == "run" ]; then
+# Standard-GPU-Flags
+DEFAULT_FLAGS="--device /dev/kfd --device /dev/dri --group-add video --group-add render"
+
+# Echte Docker-Binary finden
+if [ -x /usr/bin/docker ]; then REAL_DOCKER=/usr/bin/docker
+elif [ -x /bin/docker ]; then REAL_DOCKER=/bin/docker
+else echo "Docker nicht gefunden!"; exit 1; fi
+
+# Optional: Symlink /bin/docker setzen, falls nicht vorhanden oder falsch
+if [ ! -L /bin/docker ] || [ "$(readlink /bin/docker)" != "/usr/local/bin/docker" ]; then
+    sudo ln -sf /usr/local/bin/docker /bin/docker
+fi
+
+# Prüfen ob 'run'
+if [ "$1" = "run" ]; then
     shift
-    args=("$@")
-    extra_flags=()
-
-    echo "🎮 Checking GPU devices..." >&2
-    for dev in /dev/kfd /dev/dri $(ls /dev/dri/card* 2>/dev/null) $(ls /dev/dri/renderD* 2>/dev/null); do
-        [ -e "$dev" ] && ! contains_flag "--device=$dev" "${args[@]}" && extra_flags+=(--device="$dev")
+    FLAGS=""
+    for f in $DEFAULT_FLAGS; do
+        echo "$@" | grep -q -- "$f" || FLAGS="$FLAGS $f"
     done
-
-    echo "👥 Checking group permissions..." >&2
-for grp in render video docker; do
-    GID=$(getent group "$grp" | cut -d: -f3)
-    if [[ "$GID" =~ ^[0-9]+$ ]] && ! contains_flag "--group-add $GID" "${args[@]}"; then
-        extra_flags+=(--group-add "$GID")
-        group_setup+="groupadd -g $GID $grp 2>/dev/null || true; "
-    fi
-done
-
-    echo "📦 Final flags: ${extra_flags[*]}" >&2
-
-    # Container wird mit Gruppenbenennung gestartet
-    exec "$REAL_DOCKER" run -it "${extra_flags[@]}" "${args[@]}" bash -c "$group_setup exec bash"
+    "$REAL_DOCKER" run $FLAGS "$@"
 else
-    exec "$REAL_DOCKER" "$@"
+    "$REAL_DOCKER" "$@"
 fi
-
 EOF
 
-sudo chmod +x /usr/local/bin/amd-docker
+# Ausführbar machen
+sudo chmod +x /usr/local/bin/docker
 
-echo "=== Schritt 6: Bashrc-Funktion für docker run einfügen ==="
-cat <<'EOF' >> ~/.bashrc
-
-echo "=== Schritt 6: Bashrc-Funktion für docker run einfügen ==="
-
-if ! grep -q "amd-docker run" ~/.bashrc; then
-    cat <<'EOF' >> ~/.bashrc
-
-# 🐳 AMD-Docker-Funktion: ersetzt docker run durch amd-docker run
-docker() {
-    if [ "$1" == "run" ]; then
-        shift
-        amd-docker run "$@"
-    else
-        command docker "$@"
-    fi
-}
-EOF
-    echo "✅ Funktion hinzugefügt."
-else
-    echo "ℹ️ Funktion bereits vorhanden – wird nicht erneut eingetragen."
-fi
-
-source ~/.bashrc
-
-
-echo "✅ Setup abgeschlossen. System wird jetzt neu gestartet."
+# Feedback und Neustart
+echo "✅ Setup abgeschlossen. System wird in 10 Sekunden neu gestartet..."
+sleep 10
 sudo reboot
