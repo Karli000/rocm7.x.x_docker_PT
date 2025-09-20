@@ -26,9 +26,10 @@ Provide instructions for testing your changes:
 
 ```bash
 bash <(curl -s https://raw.githubusercontent.com/Karli000/rocm7.x.x_docker_PT/your-branch/rocm7.0.0_install.sh)
-
+```
 ```bash
 bash <(curl -s https://raw.githubusercontent.com/Karli000/rocm7.x.x_docker_PT/your-branch/rocm7.0.1_install.sh)
-
+```
 ```bash
 bash <(curl -s https://raw.githubusercontent.com/Karli000/rocm7.x.x_docker_PT/your-branch/docker_test.sh)
+```
