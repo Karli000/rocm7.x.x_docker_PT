@@ -37,7 +37,7 @@ sudo apt install ./amdgpu-install_7.0.1.70001-1_all.deb
 sudo apt install -y amdgpu-dkms rocm rocm-opencl-runtime
 
 echo "=== Schritt 4: ROCm Pfade konfigurieren ==="
-sudo tee --append /etc/ld.so.conf.d/rocm.conf <<EOF
+sudo tee --append -y /etc/ld.so.conf.d/rocm.conf <<EOF
 /opt/rocm/lib
 /opt/rocm/lib64
 EOF
