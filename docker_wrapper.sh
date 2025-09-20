@@ -26,8 +26,7 @@ DEFAULT_FLAGS="--device /dev/kfd --device /dev/dri --group-add video --group-add
 if [ -x /usr/bin/docker ]; then REAL_DOCKER=/usr/bin/docker
 elif [ -x /bin/docker ]; then REAL_DOCKER=/bin/docker
 else echo "Docker nicht gefunden!"; exit 1; fi
-if [ ! -L /bin/docker ] || [ "$(readlink /bin/docker)" != "/usr/local/bin/docker" ]; then
-    sudo ln -sf /usr/local/bin/docker /bin/docker
+
 fi
 if [ "$1" = "run" ]; then
     shift
