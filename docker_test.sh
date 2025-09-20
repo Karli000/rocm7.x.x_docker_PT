@@ -41,10 +41,10 @@ CMD ["/bin/bash"]
 EOF
 
 echo "=== Schritt 2: Container-Image bauen ==="
-docker build -t rocm-test -f Dockerfile.rocmtest .
+docker build -it rocm-test -f Dockerfile.rocmtest .
 
 echo "=== Schritt 3: Container starten und Tools ausführen ==="
-docker run --rm rocm-test bash -c "
+docker run -it --rm rocm-test bash -c "
 echo '--- /dev/kfd ---'
 ls -l /dev/kfd || echo 'Nicht vorhanden'
 
