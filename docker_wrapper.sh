@@ -1,3 +1,6 @@
+#!/bin/bash
+set -e
+
 echo "=== Schritt: AMD-Docker Wrapper installieren ==="
 
 # 🔄 Vorherige Version löschen, falls vorhanden
