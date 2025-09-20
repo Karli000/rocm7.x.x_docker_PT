@@ -59,4 +59,4 @@ hash -d docker 2>/dev/null || true
 
 # 4. Neue Shell-Session starten oder testen
 echo "Installation abgeschlossen!"
-echo "Test: 
+echo "#container-test: bash <(curl -s https://raw.githubusercontent.com/Karli000/rocm7.x.x_docker_PT/main/docker_test.sh)"
