@@ -1,3 +1,7 @@
+#!/bin/bash
+set -e
+
+
 # 1. Wrapper erstellen
 sudo tee /usr/local/bin/docker > /dev/null << 'EOF'
 #!/bin/bash
