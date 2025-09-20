@@ -56,14 +56,15 @@ echo "=== Schritt 5: AMD-Docker Wrapper installieren ==="
 sudo tee /usr/local/bin/amd-docker > /dev/null <<'EOF'
 #!/bin/bash
 
+#!/bin/bash
+
 REAL_DOCKER="$(command -v docker | grep -v /usr/local/bin/amd-docker || true)"
 [ -z "$REAL_DOCKER" ] && [ -x /usr/bin/docker ] && REAL_DOCKER="/usr/bin/docker"
 [ -z "$REAL_DOCKER" ] && [ -x /bin/docker ] && REAL_DOCKER="/bin/docker"
 [ -z "$REAL_DOCKER" ] && echo "❌ Docker binary not found!" >&2 && exit 1
 
 contains_flag() {
-    local flag="$1"
-    shift
+    local flag="$1"; shift
     for arg in "$@"; do [[ "$arg" == "$flag"* ]] && return 0; done
     return 1
 }
@@ -83,14 +84,18 @@ if [ "$1" == "run" ]; then
         GID=$(getent group "$grp" | cut -d: -f3)
         if [[ "$GID" =~ ^[0-9]+$ ]] && ! contains_flag "--group-add $GID" "${args[@]}"; then
             extra_flags+=(--group-add "$GID")
+            group_setup+="groupadd -g $GID $grp; "
         fi
     done
 
     echo "📦 Final flags: ${extra_flags[*]}" >&2
-    exec "$REAL_DOCKER" run -it "${extra_flags[@]}" "${args[@]}"
+
+    # Container wird mit Gruppenbenennung gestartet
+    exec "$REAL_DOCKER" run -it "${extra_flags[@]}" "${args[@]}" bash -c "$group_setup exec bash"
 else
     exec "$REAL_DOCKER" "$@"
 fi
+
 EOF
 
 sudo chmod +x /usr/local/bin/amd-docker
