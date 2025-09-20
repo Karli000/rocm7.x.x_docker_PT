@@ -11,6 +11,7 @@ sudo groupadd docker || true
 sudo usermod -aG docker,video,render "$TARGET_USER"
 sudo usermod -aG docker,video,render root
 
+sudo apt update
 wget https://repo.radeon.com/amdgpu/7.0/ubuntu/pool/main/a/amdgpu-insecure-instinct-udev-rules/amdgpu-insecure-instinct-udev-rules_30.10.0.0-2204008.24.04_all.deb
 sudo apt install --allow-downgrades -y ./amdgpu-insecure-instinct-udev-rules_30.10.0.0-2204008.24.04_all.deb
 
@@ -29,7 +30,6 @@ Pin: release o=repo.radeon.com
 Pin-Priority: 600
 sudo apt update
 EOF
-
 
 wget https://repo.radeon.com/amdgpu-install/7.0/ubuntu/noble/amdgpu-install_7.0.70000-1_all.deb
 sudo apt install -y ./amdgpu-install_7.0.70000-1_all.deb
