@@ -34,6 +34,10 @@ bash <(curl -s https://raw.githubusercontent.com/Karli000/rocm7.x.x_docker_PT/ma
 #rocm7.0.0
 bash <(curl -s https://raw.githubusercontent.com/Karli000/rocm7.x.x_docker_PT/main/rocm7.0.0_install.sh)
 ```
+```bash
+#docker_wrapper
+bash <(curl -s https://raw.githubusercontent.com/Karli000/rocm7.x.x_docker_PT/main/docker_wrapper.sh)
+```
 ```
 #test
 ls -l /dev/kfd && ls -l /dev/dri && rocminfo && clinfo
