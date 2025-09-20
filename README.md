@@ -42,3 +42,11 @@ ls -l /dev/kfd && ls -l /dev/dri && rocminfo && clinfo
 #container-test
 bash <(curl -s https://raw.githubusercontent.com/Karli000/rocm7.x.x_docker_PT/main/docker_test.sh)
 ```
+```
+#mirror-master
+bash <(curl -s https://raw.githubusercontent.com/Karli000/rocm7.x.x_docker_PT/main/mirror-master.sh)
+```
+```
+#mirror-host
+bash <(curl -s https://raw.githubusercontent.com/Karli000/rocm7.x.x_docker_PT/main/mirror-host.sh)
+```
