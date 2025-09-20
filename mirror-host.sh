@@ -6,8 +6,14 @@ read -p "🖧 Bitte gib die IP-Adresse deines Docker-Mirror-Servers ein: " MIRRO
 # Pfad zur Docker-Konfig
 CONFIG_PATH="/etc/docker/daemon.json"
 
+# Sicherstellen dass /etc/docker existiert
+sudo mkdir -p /etc/docker
+
 # Backup der alten Konfig
-sudo cp $CONFIG_PATH ${CONFIG_PATH}.backup
+if [ -f "$CONFIG_PATH" ]; then
+    sudo cp $CONFIG_PATH ${CONFIG_PATH}.backup.$(date +%Y%m%d_%H%M%S)
+    echo "📦 Backup der alten Konfig erstellt"
+fi
 
 # Neue Konfiguration schreiben
 sudo tee $CONFIG_PATH > /dev/null <<EOF
@@ -26,4 +32,12 @@ EOF
 echo "🔄 Docker wird neu gestartet..."
 sudo systemctl restart docker
 
-echo "✅ Mirror-Konfiguration abgeschlossen für IP: $MIRROR_IP"
+# Prüfen ob Docker läuft
+if sudo systemctl is-active --quiet docker; then
+    echo "✅ Mirror-Konfiguration abgeschlossen für IP: $MIRROR_IP"
+    echo "📋 Konfiguration gespeichert in: $CONFIG_PATH"
+else
+    echo "❌ Docker konnte nicht gestartet werden. Bitte prüfen:"
+    echo "   sudo systemctl status docker"
+    echo "   sudo journalctl -xe"
+fi
