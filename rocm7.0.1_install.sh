@@ -56,8 +56,6 @@ echo "=== Schritt 5: AMD-Docker Wrapper installieren ==="
 sudo tee /usr/local/bin/amd-docker > /dev/null <<'EOF'
 #!/bin/bash
 
-#!/bin/bash
-
 REAL_DOCKER="$(command -v docker | grep -v /usr/local/bin/amd-docker || true)"
 [ -z "$REAL_DOCKER" ] && [ -x /usr/bin/docker ] && REAL_DOCKER="/usr/bin/docker"
 [ -z "$REAL_DOCKER" ] && [ -x /bin/docker ] && REAL_DOCKER="/bin/docker"
@@ -80,13 +78,13 @@ if [ "$1" == "run" ]; then
     done
 
     echo "👥 Checking group permissions..." >&2
-    for grp in render video; do
-        GID=$(getent group "$grp" | cut -d: -f3)
-        if [[ "$GID" =~ ^[0-9]+$ ]] && ! contains_flag "--group-add $GID" "${args[@]}"; then
-            extra_flags+=(--group-add "$GID")
-            group_setup+="groupadd -g $GID $grp; "
-        fi
-    done
+for grp in render video docker; do
+    GID=$(getent group "$grp" | cut -d: -f3)
+    if [[ "$GID" =~ ^[0-9]+$ ]] && ! contains_flag "--group-add $GID" "${args[@]}"; then
+        extra_flags+=(--group-add "$GID")
+        group_setup+="groupadd -g $GID $grp 2>/dev/null || true; "
+    fi
+done
 
     echo "📦 Final flags: ${extra_flags[*]}" >&2
 
@@ -103,6 +101,11 @@ sudo chmod +x /usr/local/bin/amd-docker
 echo "=== Schritt 6: Bashrc-Funktion für docker run einfügen ==="
 cat <<'EOF' >> ~/.bashrc
 
+echo "=== Schritt 6: Bashrc-Funktion für docker run einfügen ==="
+
+if ! grep -q "amd-docker run" ~/.bashrc; then
+    cat <<'EOF' >> ~/.bashrc
+
 # 🐳 AMD-Docker-Funktion: ersetzt docker run durch amd-docker run
 docker() {
     if [ "$1" == "run" ]; then
@@ -113,8 +116,13 @@ docker() {
     fi
 }
 EOF
+    echo "✅ Funktion hinzugefügt."
+else
+    echo "ℹ️ Funktion bereits vorhanden – wird nicht erneut eingetragen."
+fi
 
 source ~/.bashrc
+
 
 echo "✅ Setup abgeschlossen. System wird jetzt neu gestartet."
 sudo reboot
