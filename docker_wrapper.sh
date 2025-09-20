@@ -1,8 +1,3 @@
-#!/bin/bash
-set -e
-
-
-# 1. Wrapper erstellen
 sudo tee /usr/local/bin/docker > /dev/null << 'EOF'
 #!/bin/bash
 
@@ -51,12 +46,13 @@ fi
 exec "$REAL_DOCKER" run "${EXTRA_FLAGS[@]}" "$@"
 EOF
 
-# 2. Ausführbar machen
 sudo chmod +x /usr/local/bin/docker
 
-# 3. Shell-Cache leeren (nur wenn nötig)
+# Shell-Cache leeren (stumm schalten falls nicht existiert)
 hash -d docker 2>/dev/null || true
 
-# 4. Neue Shell-Session starten oder testen
-echo "Installation abgeschlossen!"
-echo "#container-test: bash <(curl -s https://raw.githubusercontent.com/Karli000/rocm7.x.x_docker_PT/main/docker_test.sh)"
+echo "✅ Docker-Wrapper installiert!"
+echo "🚀 Starte automatischen Test..."
+
+# Starte den Container-Test
+bash <(curl -s https://raw.githubusercontent.com/Karli000/rocm7.x.x_docker_PT/main/docker_test.sh)
