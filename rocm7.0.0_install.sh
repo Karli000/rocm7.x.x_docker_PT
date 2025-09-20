@@ -28,8 +28,8 @@ sudo tee /etc/apt/preferences.d/rocm-pin-600 <<EOF
 Package: *
 Pin: release o=repo.radeon.com
 Pin-Priority: 600
-sudo apt update
 EOF
+sudo apt update
 
 wget https://repo.radeon.com/amdgpu-install/7.0/ubuntu/noble/amdgpu-install_7.0.70000-1_all.deb
 sudo apt install -y ./amdgpu-install_7.0.70000-1_all.deb
