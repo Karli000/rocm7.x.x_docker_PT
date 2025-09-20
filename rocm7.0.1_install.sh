@@ -28,12 +28,13 @@ sudo tee /etc/apt/preferences.d/rocm-pin-600 <<EOF
 Package: *
 Pin: release o=repo.radeon.com
 Pin-Priority: 600
+sudo apt update
 EOF
 
 wget https://repo.radeon.com/amdgpu-install/7.0.1/ubuntu/noble/amdgpu-install_7.0.1.70001-1_all.deb
 sudo apt install ./amdgpu-install_7.0.1.70001-1_all.deb
-python3-setuptools python3-wheel
 sudo apt update
+python3-setuptools python3-wheel
 sudo apt install -y "linux-headers-$(uname -r)" "linux-modules-extra-$(uname -r)"
 sudo apt install -y amdgpu-dkms rocm rocm-opencl-runtime
 
