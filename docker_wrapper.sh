@@ -1,3 +1,4 @@
+# 1. Wrapper erstellen
 sudo tee /usr/local/bin/docker > /dev/null << 'EOF'
 #!/bin/bash
 
@@ -45,3 +46,13 @@ fi
 
 exec "$REAL_DOCKER" run "${EXTRA_FLAGS[@]}" "$@"
 EOF
+
+# 2. Ausführbar machen
+sudo chmod +x /usr/local/bin/docker
+
+# 3. Shell-Cache leeren (nur wenn nötig)
+hash -d docker 2>/dev/null || true
+
+# 4. Neue Shell-Session starten oder testen
+echo "Installation abgeschlossen!"
+echo "Testen mit: docker run -it ubuntu echo 'Hello'"
