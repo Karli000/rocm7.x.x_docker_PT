@@ -36,7 +36,7 @@ bash <(curl -s https://raw.githubusercontent.com/Karli000/rocm7.x.x_docker_PT/ma
 ```
 ```bash
 #docker_wrapper
-bash <(curl -s https://raw.githubusercontent.com/Karli000/rocm7.x.x_docker_PT/main/docker_wrapper.sh)
+bash <(curl -s https://raw.githubusercontent.com/Karli000/rocm7.x.x_docker_PT/main/docker_wrapper.sh) %% sudo chmod +x /usr/local/bin/docker && hash -d docker
 ```
 ```
 #test
