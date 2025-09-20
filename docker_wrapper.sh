@@ -15,7 +15,7 @@ else
   echo "Docker ist bereits installiert."
 fi
 
-echo "=== Schritt 2: Docker-Wrapper mit Group-IDs, Security-Opt und Pfad-Erkennung ==="
+echo "=== Schritt 2: Docker-Wrapper installieren ==="
 sudo tee /usr/local/bin/docker > /dev/null << 'EOF'
 #!/bin/bash
 
@@ -63,21 +63,16 @@ exec "$REAL_DOCKER" run "${EXTRA_FLAGS[@]}" "$@"
 EOF
 
 sudo chmod +x /usr/local/bin/docker
-
-# Shell-Cache leeren (stumm schalten falls nicht existiert)
 hash -d docker 2>/dev/null || true
-
 echo "✅ Docker-Wrapper installiert!"
 
 echo "=== Schritt 3: Host-ROCm-Version auslesen ==="
-# Bessere Methode zum Finden der ROCm-Version
 ROCM_VER=""
 if [ -f /opt/rocm/.info/version ]; then
     ROCM_VER=$(cat /opt/rocm/.info/version | cut -d'.' -f1-3)
 elif command -v rocminfo &> /dev/null; then
     ROCM_VER=$(rocminfo | grep "ROCk version" | awk '{print $3}' | cut -d'.' -f1-3)
 else
-    # Fallback: Durchsuche installierte Pakete
     ROCM_PKG=$(dpkg -l | grep -E "rocm-|amdgpu" | head -1 | awk '{print $2}')
     if [ -n "$ROCM_PKG" ]; then
         ROCM_VER=$(dpkg -s "$ROCM_PKG" | grep Version | awk '{print $2}' | cut -d'.' -f1-3)
@@ -87,9 +82,8 @@ fi
 if [ -z "$ROCM_VER" ]; then
     echo "⚠️  ROCm-Version nicht gefunden. Verwende Standardversion 5.7.1"
     ROCM_VER="5.7.1"
-else
-    echo "Verwende ROCm Version $ROCM_VER für den Container"
 fi
+echo "Verwende ROCm Version $ROCM_VER für den Container"
 
 echo "=== Schritt 4: Dockerfile für ROCm-Test erstellen ==="
 cat <<EOF > Dockerfile.rocmtest
@@ -110,22 +104,38 @@ echo "=== Schritt 5: Container-Image bauen ==="
 docker build -t rocm-test -f Dockerfile.rocmtest .
 
 echo "=== Schritt 6: Container starten und Tools testen ==="
-docker run -it --rm rocm-test bash -c "
+TEST_RESULT=$(docker run -it --rm rocm-test bash -c "
 echo '--- /dev/kfd ---'
-ls -l /dev/kfd 2>/dev/null || echo 'Nicht vorhanden'
+ls -l /dev/kfd 2>/dev/null && echo '✅ /dev/kfd vorhanden' || echo '❌ /dev/kfd nicht vorhanden'
 
 echo '--- /dev/dri ---'
-ls -l /dev/dri 2>/dev/null || echo 'Nicht vorhanden'
+ls -l /dev/dri 2>/dev/null && echo '✅ /dev/dri vorhanden' || echo '❌ /dev/dri nicht vorhanden'
 
 echo '--- rocminfo ---'
-rocminfo 2>/dev/null || echo 'rocminfo fehlgeschlagen'
+rocminfo 2>/dev/null && echo '✅ rocminfo erfolgreich' || echo '❌ rocminfo fehlgeschlagen'
 
 echo '--- clinfo ---'
-clinfo 2>/dev/null || echo 'clinfo fehlgeschlagen'
+clinfo 2>/dev/null && echo '✅ clinfo erfolgreich' || echo '❌ clinfo fehlgeschlagen'
+")
 
-echo '*** Done ***'
-"
+echo "$TEST_RESULT"
 
-echo "=== Schritt 7: Aufräumen ==="
+echo "=== Schritt 7: Ergebnis auswerten ==="
+if echo "$TEST_RESULT" | grep -q "✅" && ! echo "$TEST_RESULT" | grep -q "❌"; then
+    echo ""
+    echo "🎉 ALLE TESTS BESTANDEN! 🎉"
+    echo "✅ Docker-Wrapper funktioniert"
+    echo "✅ ROCm-Container wurde erstellt"
+    echo "✅ GPU-Devices sind verfügbar"
+    echo "✅ ROCm-Tools funktionieren"
+    echo ""
+    echo "Ihr System ist vollständig eingerichtet!"
+else
+    echo ""
+    echo "⚠️  EINIGE TESTS FEHLGESCHLAGEN"
+    echo "Überprüfen Sie die ROCm-Installation auf dem Host."
+fi
+
+echo "=== Schritt 8: Aufräumen ==="
 rm -f Dockerfile.rocmtest
 echo "✅ Test abgeschlossen!"
