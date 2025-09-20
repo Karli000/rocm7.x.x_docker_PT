@@ -68,17 +68,30 @@ sudo chmod +x /usr/local/bin/docker
 hash -d docker 2>/dev/null || true
 
 echo "✅ Docker-Wrapper installiert!"
-echo "🚀 Starte automatischen Test..."
 
 echo "=== Schritt 3: Host-ROCm-Version auslesen ==="
-if ! command -v dpkg-query &> /dev/null || ! dpkg-query -W rocm &> /dev/null; then
-    echo "ROCm ist auf dem Host nicht installiert. Bitte zuerst ROCm installieren."
-    exit 1
+# Bessere Methode zum Finden der ROCm-Version
+ROCM_VER=""
+if [ -f /opt/rocm/.info/version ]; then
+    ROCM_VER=$(cat /opt/rocm/.info/version | cut -d'.' -f1-3)
+elif command -v rocminfo &> /dev/null; then
+    ROCM_VER=$(rocminfo | grep "ROCk version" | awk '{print $3}' | cut -d'.' -f1-3)
+else
+    # Fallback: Durchsuche installierte Pakete
+    ROCM_PKG=$(dpkg -l | grep -E "rocm-|amdgpu" | head -1 | awk '{print $2}')
+    if [ -n "$ROCM_PKG" ]; then
+        ROCM_VER=$(dpkg -s "$ROCM_PKG" | grep Version | awk '{print $2}' | cut -d'.' -f1-3)
+    fi
 fi
-ROCM_VER=$(dpkg-query -W -f='${Version}' rocm | cut -d'.' -f1-3)
-echo "Verwende ROCm Version $ROCM_VER für den Container"
 
-echo "=== Schritt 3: Dockerfile für ROCm-Test erstellen ==="
+if [ -z "$ROCM_VER" ]; then
+    echo "⚠️  ROCm-Version nicht gefunden. Verwende Standardversion 5.7.1"
+    ROCM_VER="5.7.1"
+else
+    echo "Verwende ROCm Version $ROCM_VER für den Container"
+fi
+
+echo "=== Schritt 4: Dockerfile für ROCm-Test erstellen ==="
 cat <<EOF > Dockerfile.rocmtest
 FROM ubuntu:24.04
 ENV DEBIAN_FRONTEND=noninteractive
@@ -93,20 +106,26 @@ RUN mkdir -p /etc/apt/keyrings && \\
 CMD ["/bin/bash"]
 EOF
 
-echo "=== Schritt 4: Container-Image bauen ==="
+echo "=== Schritt 5: Container-Image bauen ==="
 docker build -t rocm-test -f Dockerfile.rocmtest .
 
-echo "=== Schritt 5: Container starten und Tools testen ==="
+echo "=== Schritt 6: Container starten und Tools testen ==="
 docker run -it --rm rocm-test bash -c "
 echo '--- /dev/kfd ---'
-ls -l /dev/kfd || echo 'Nicht vorhanden'
+ls -l /dev/kfd 2>/dev/null || echo 'Nicht vorhanden'
 
 echo '--- /dev/dri ---'
-ls -l /dev/dri || echo 'Nicht vorhanden'
+ls -l /dev/dri 2>/dev/null || echo 'Nicht vorhanden'
 
 echo '--- rocminfo ---'
-rocminfo || echo 'rocminfo fehlgeschlagen'
+rocminfo 2>/dev/null || echo 'rocminfo fehlgeschlagen'
 
 echo '--- clinfo ---'
-clinfo || echo 'clinfo fehlgeschlagen'
+clinfo 2>/dev/null || echo 'clinfo fehlgeschlagen'
+
+echo '*** Done ***'
 "
+
+echo "=== Schritt 7: Aufräumen ==="
+rm -f Dockerfile.rocmtest
+echo "✅ Test abgeschlossen!"
