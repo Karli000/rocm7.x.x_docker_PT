@@ -33,9 +33,9 @@ if [ "$1" = "run" ]; then
     for f in $DEFAULT_FLAGS; do
         echo "$@" | grep -q -- "$f" || FLAGS="$FLAGS $f"
     done
-    "$REAL_DOCKER" run $FLAGS "$@"
+  exec "$REAL_DOCKER" run $FLAGS "$@"
 else
-    "$REAL_DOCKER" "$@"
+  exec "$REAL_DOCKER" "$@"
 fi
 EOF
 
