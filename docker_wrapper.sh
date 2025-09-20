@@ -24,9 +24,6 @@ FLAGS=""
 [ -e /dev/dri/renderD128 ] && FLAGS="$FLAGS --device /dev/dri/renderD128"
 FLAGS="$FLAGS --group-add video --group-add render"
 
-# Symlink setzen
-[ ! -L /bin/docker ] && sudo ln -sf /usr/local/bin/docker /bin/docker
-
 # Wenn 'run' aufgerufen, füge GPU-Flags hinzu
 if [ "$1" = "run" ]; then
     shift
