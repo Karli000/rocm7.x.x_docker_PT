@@ -58,14 +58,12 @@ sudo tee /usr/local/bin/amd-docker > /dev/null <<'EOF'
 REAL_DOCKER="$(command -v docker | grep -v /usr/local/bin/amd-docker || true)"
 [ -z "$REAL_DOCKER" ] && [ -x /usr/bin/docker ] && REAL_DOCKER="/usr/bin/docker"
 [ -z "$REAL_DOCKER" ] && [ -x /bin/docker ] && REAL_DOCKER="/bin/docker"
-[ -z "$REAL_DOCKER" ] && echo "❌ Konnte echte Docker-Binary nicht finden!" >&2 && exit 1
+[ -z "$REAL_DOCKER" ] && echo "❌ Docker binary not found!" >&2 && exit 1
 
 contains_flag() {
     local flag="$1"
     shift
-    for arg in "$@"; do
-        [[ "$arg" == "$flag"* ]] && return 0
-    done
+    for arg in "$@"; do [[ "$arg" == "$flag"* ]] && return 0; done
     return 1
 }
 
@@ -74,24 +72,24 @@ if [ "$1" == "run" ]; then
     args=("$@")
     extra_flags=()
 
-    # 🎮 GPU-Devices hinzufügen
-    for dev in /dev/kfd /dev/dri /dev/dri/card* /dev/dri/renderD*; do
+    echo "🎮 Checking GPU devices..." >&2
+    for dev in /dev/kfd /dev/dri $(ls /dev/dri/card* 2>/dev/null) $(ls /dev/dri/renderD* 2>/dev/null); do
         [ -e "$dev" ] && ! contains_flag "--device=$dev" "${args[@]}" && extra_flags+=(--device="$dev")
     done
 
-    # 👥 Gruppenrechte hinzufügen
+    echo "👥 Checking group permissions..." >&2
     for grp in render video; do
         GID=$(getent group "$grp" | cut -d: -f3)
-        [ -n "$GID" ] && ! contains_flag "--group-add $GID" "${args[@]}" && extra_flags+=(--group-add "$GID")
+        if [[ "$GID" =~ ^[0-9]+$ ]] && ! contains_flag "--group-add $GID" "${args[@]}"; then
+            extra_flags+=(--group-add "$GID")
+        fi
     done
 
-    # 🧨 Docker ausführen
-    echo "📦 Zusätzliche Flags: ${extra_flags[*]}" >&2
+    echo "📦 Final flags: ${extra_flags[*]}" >&2
     exec "$REAL_DOCKER" run -it "${extra_flags[@]}" "${args[@]}"
 else
     exec "$REAL_DOCKER" "$@"
 fi
-
 EOF
 
 sudo chmod +x /usr/local/bin/amd-docker
