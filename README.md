@@ -27,14 +27,13 @@ After reboot, you can use `docker run` as usual. The wrapper automatically ensur
 - Access to `/dev/kfd` and `/dev/dri`
 - Group permissions for `video` and `render`
 ```bash
-#rocm7.0.0
-bash <(curl -s https://raw.githubusercontent.com/Karli000/rocm7.x.x_docker_PT/main/rocm7.0.0_install.sh)
-```
-```bash
 #rocm7.0.1
 bash <(curl -s https://raw.githubusercontent.com/Karli000/rocm7.x.x_docker_PT/main/rocm7.0.1_install.sh)
 ```
-
+```bash
+#rocm7.0.0
+bash <(curl -s https://raw.githubusercontent.com/Karli000/rocm7.x.x_docker_PT/main/rocm7.0.0_install.sh)
+```
 ```
 #test
 ls -l /dev/kfd && ls -l /dev/dri && rocminfo && clinfo
