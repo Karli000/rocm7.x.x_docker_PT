@@ -59,4 +59,4 @@ hash -d docker 2>/dev/null || true
 
 # 4. Neue Shell-Session starten oder testen
 echo "Installation abgeschlossen!"
-echo "Testen mit: docker run -it ubuntu echo 'Hello'"
+echo "Test: 
