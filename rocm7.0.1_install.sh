@@ -4,7 +4,6 @@ set -e
 echo "=== Schritt 1: System aktualisieren und Grundpakete installieren ==="
 sudo apt update && sudo apt upgrade -y && sudo apt dist-upgrade -y
 sudo apt install -y update-manager-core build-essential python3-setuptools python3-wheel
-sudo apt install -y "linux-headers-$(uname -r)" "linux-modules-extra-$(uname -r)"
 
 echo "=== Schritt 2: Gruppen konfigurieren und AMDGPU Udev-Regeln installieren ==="
 TARGET_USER="${SUDO_USER:-$(logname)}"
@@ -34,6 +33,7 @@ EOF
 sudo apt update
 wget https://repo.radeon.com/amdgpu-install/7.0.1/ubuntu/noble/amdgpu-install_7.0.1.70001-1_all.deb
 sudo apt install ./amdgpu-install_7.0.1.70001-1_all.deb
+sudo apt install -y "linux-headers-$(uname -r)" "linux-modules-extra-$(uname -r)"
 sudo apt install -y amdgpu-dkms rocm rocm-opencl-runtime
 
 echo "=== Schritt 4: ROCm Pfade konfigurieren ==="
