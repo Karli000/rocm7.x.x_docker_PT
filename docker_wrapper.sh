@@ -1,40 +1,50 @@
-#!/bin/sh
-# Universeller AMD-Docker-Wrapper, korrekt ohne doppelte Flags
+sudo tee /usr/local/bin/docker > /dev/null << 'EOF'
+#!/bin/bash
 
-# Finde die echte Docker-Binary
-if [ -x /usr/bin/docker ]; then
-    REAL_DOCKER=/usr/bin/docker
-elif [ -x /bin/docker ]; then
-    REAL_DOCKER=/bin/docker
-else
-    echo "Docker-Binary wurde nicht gefunden!"
-    exit 1
+# Docker-Wrapper mit Group-IDs, Security-Opt und Pfad-Erkennung
+
+# Finde den echten Docker-Pfad (ignoriere /usr/local/bin)
+REAL_DOCKER=$(which -a docker | grep -v "^/usr/local/bin/" | head -n1)
+
+# Fallback: Durchsuche bekannte Pfade
+if [ -z "$REAL_DOCKER" ] || [ ! -x "$REAL_DOCKER" ]; then
+    if [ -x "/usr/bin/docker" ]; then
+        REAL_DOCKER="/usr/bin/docker"
+    elif [ -x "/bin/docker" ]; then
+        REAL_DOCKER="/bin/docker"
+    else
+        echo "Error: Cannot find real docker binary" >&2
+        exit 1
+    fi
 fi
 
-# Funktion, die ein Flag nur hinzufügt, wenn es nicht schon vorhanden ist
-append_flag() {
-    case " $FLAGS " in
-        *" $1 "*) : ;;  # schon vorhanden, nichts tun
-        *) FLAGS="$FLAGS $1" ;;
-    esac
-}
-
-# Standard-GPU-Geräte prüfen und Flags hinzufügen
-[ -e /dev/kfd ] && append_flag "--device /dev/kfd"
-[ -e /dev/dri/card0 ] && append_flag "--device /dev/dri/card0"
-[ -e /dev/dri/renderD128 ] && append_flag "--device /dev/dri/renderD128"
-
-# Gruppen hinzufügen
-append_flag "--group-add video"
-append_flag "--group-add render"
-
-# Security-Option hinzufügen
-append_flag "--security-opt seccomp=unconfined"
-
-# Wenn 'run' aufgerufen wird, Flags hinzufügen
-if [ "$1" = "run" ]; then
-    shift
-    exec "$REAL_DOCKER" run $FLAGS "$@"
-else
+if [ "$1" != "run" ]; then
     exec "$REAL_DOCKER" "$@"
 fi
+
+shift
+
+# Hole die Group-IDs vom Host-System
+VIDEO_GID=$(getent group video | cut -d: -f3)
+RENDER_GID=$(getent group render | cut -d: -f3)
+
+# Einfache Duplikat-Prüfung
+EXTRA_FLAGS=()
+echo "$@" | grep -q -- "--device.*/dev/dri" || EXTRA_FLAGS+=(--device "/dev/dri")
+echo "$@" | grep -q -- "--device.*/dev/kfd" || EXTRA_FLAGS+=(--device "/dev/kfd")
+echo "$@" | grep -q -- "--security-opt.*seccomp" || EXTRA_FLAGS+=(--security-opt "seccomp=unconfined")
+
+# Verwende Group-IDs statt Namen
+if [ -n "$VIDEO_GID" ]; then
+    echo "$@" | grep -q -- "--group-add.*video" || EXTRA_FLAGS+=(--group-add "$VIDEO_GID")
+fi
+
+if [ -n "$RENDER_GID" ]; then
+    echo "$@" | grep -q -- "--group-add.*render" || EXTRA_FLAGS+=(--group-add "$RENDER_GID")
+fi
+
+exec "$REAL_DOCKER" run "${EXTRA_FLAGS[@]}" "$@"
+EOF
+
+sudo chmod +x /usr/local/bin/docker
+hash -d docker
