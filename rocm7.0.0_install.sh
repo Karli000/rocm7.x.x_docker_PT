@@ -39,10 +39,10 @@ sudo apt install -y "linux-headers-$(uname -r)" "linux-modules-extra-$(uname -r)
 sudo apt install -y amdgpu-dkms rocm rocm-opencl-runtime
 
 echo "=== Schritt 4: ROCm Pfade konfigurieren ==="
-
-for path in /opt/rocm/lib /opt/rocm/lib64; do
-    grep -qx "$path" /etc/ld.so.conf.d/rocm.conf || echo "$path" | sudo tee -a /etc/ld.so.conf.d/rocm.conf > /dev/null
-done
+sudo tee --append /etc/ld.so.conf.d/rocm.conf <<EOF
+/opt/rocm/lib
+/opt/rocm/lib64
+EOF
 
 sudo ldconfig
 
