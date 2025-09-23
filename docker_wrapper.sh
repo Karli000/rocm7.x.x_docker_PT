@@ -50,15 +50,28 @@ echo "$@" | grep -q -- "--device.*/dev/dri" || EXTRA_FLAGS+=(--device "/dev/dri"
 echo "$@" | grep -q -- "--device.*/dev/kfd" || EXTRA_FLAGS+=(--device "/dev/kfd")
 echo "$@" | grep -q -- "--security-opt.*seccomp" || EXTRA_FLAGS+=(--security-opt "seccomp=unconfined")
 
-# Verwende Group-IDs statt Namen
-if [ -n "$VIDEO_GID" ]; then
-    echo "$@" | grep -q -- "--group-add.*video" || EXTRA_FLAGS+=(--group-add "$VIDEO_GID")
-fi
+# GIDs dem Container hinzufügen
+[ -n "$VIDEO_GID" ] && EXTRA_FLAGS+=(--group-add "$VIDEO_GID")
+[ -n "$RENDER_GID" ] && EXTRA_FLAGS+=(--group-add "$RENDER_GID")
 
-if [ -n "$RENDER_GID" ]; then
-    echo "$@" | grep -q -- "--group-add.*render" || EXTRA_FLAGS+=(--group-add "$RENDER_GID")
-fi
+# -------------------------
+# Container starten
+# -------------------------
+CONTAINER_NAME=$(echo "$@" | grep -oP '(?<=--name )\S+' || echo "")
+$REAL_DOCKER run "${EXTRA_FLAGS[@]}" "$@" &
 
+# -------------------------
+# Warten bis Container läuft, dann Gruppen anlegen
+# -------------------------
+if [ -n "$CONTAINER_NAME" ]; then
+    sleep 2  # kurz warten, bis Container läuft
+    if [ -n "$VIDEO_GID" ]; then
+        $REAL_DOCKER exec "$CONTAINER_NAME" groupadd -g "$VIDEO_GID" video 2>/dev/null || true
+    fi
+    if [ -n "$RENDER_GID" ]; then
+        $REAL_DOCKER exec "$CONTAINER_NAME" groupadd -g "$RENDER_GID" render 2>/dev/null || true
+    fi
+fi
 exec "$REAL_DOCKER" run "${EXTRA_FLAGS[@]}" "$@"
 EOF
 
