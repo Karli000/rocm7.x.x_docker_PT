@@ -74,7 +74,7 @@ else
 fi
 
 # Gruppen im Container anlegen (falls Name oder ID bekannt)
-if [ -n "$CONTAINER_NAME" ]; then
+if [ -n "$CONTAINER_ID" ]; then
     sleep 2
     [ -n "$VIDEO_GID" ] && $REAL_DOCKER exec "$CONTAINER_NAME" sh -c "getent group $VIDEO_GID || groupadd -g $VIDEO_GID video"
     [ -n "$RENDER_GID" ] && $REAL_DOCKER exec "$CONTAINER_NAME" sh -c "getent group $RENDER_GID || groupadd -g $RENDER_GID render"
