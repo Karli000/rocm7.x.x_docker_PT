@@ -21,8 +21,7 @@ sudo tee /usr/local/bin/docker > /dev/null << 'EOF'
 
 #!/bin/bash
 
-# Echten Docker-Pfad finden
-# -------------------------
+# Finde den echten Docker-Pfad
 REAL_DOCKER=$(which -a docker | grep -v "^/usr/local/bin/" | head -n1)
 if [ -z "$REAL_DOCKER" ] || [ ! -x "$REAL_DOCKER" ]; then
     if [ -x "/usr/bin/docker" ]; then
@@ -35,41 +34,30 @@ if [ -z "$REAL_DOCKER" ] || [ ! -x "$REAL_DOCKER" ]; then
     fi
 fi
 
-# -------------------------
-# Nur weiterleiten, wenn nicht "run"
-# -------------------------
+# Wenn kein 'run', einfach weiterleiten
 if [ "$1" != "run" ]; then
     exec "$REAL_DOCKER" "$@"
 fi
+
 shift  # "run" entfernen
 
 # -------------------------
 # Host-GIDs holen
-# -------------------------
 VIDEO_GID=$(getent group video | cut -d: -f3)
 RENDER_GID=$(getent group render | cut -d: -f3)
 
 # -------------------------
-# Basis-Flags setzen
-# -------------------------
+# Basis-Flags (nur hinzufügen, wenn noch nicht vorhanden)
 EXTRA_FLAGS=()
 echo "$@" | grep -q -- "--device.*/dev/dri" || EXTRA_FLAGS+=(--device "/dev/dri")
 echo "$@" | grep -q -- "--device.*/dev/kfd" || EXTRA_FLAGS+=(--device "/dev/kfd")
 echo "$@" | grep -q -- "--security-opt.*seccomp" || EXTRA_FLAGS+=(--security-opt "seccomp=unconfined")
-
-# GIDs hinzufügen
-[ -n "$VIDEO_GID" ] && EXTRA_FLAGS+=(--group-add "$VIDEO_GID")
-[ -n "$RENDER_GID" ] && EXTRA_FLAGS+=(--group-add "$RENDER_GID")
-
-# Interaktiv Flags prüfen
-INTERACTIVE_FLAGS=()
-echo "$@" | grep -q -- "-i" && INTERACTIVE_FLAGS+=("-i")
-echo "$@" | grep -q -- "-t" && INTERACTIVE_FLAGS+=("-t")
+[ -n "$VIDEO_GID" ] && echo "$@" | grep -q -- "--group-add $VIDEO_GID" || EXTRA_FLAGS+=(--group-add "$VIDEO_GID")
+[ -n "$RENDER_GID" ] && echo "$@" | grep -q -- "--group-add $RENDER_GID" || EXTRA_FLAGS+=(--group-add "$RENDER_GID")
 
 # -------------------------
 # Container starten
-# -------------------------
-exec $REAL_DOCKER run "${INTERACTIVE_FLAGS[@]}" "${EXTRA_FLAGS[@]}" "$@"
+exec $REAL_DOCKER run "${EXTRA_FLAGS[@]}" "$@"
 fi
 EOF
 
