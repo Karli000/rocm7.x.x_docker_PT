@@ -46,6 +46,9 @@ docker build -t rocm-test -f Dockerfile.rocmtest .
 
 echo "=== Schritt 5: Container starten und Tools testen ==="
 docker run -it --rm rocm-test bash -c "
+echo '--- groups ---'
+groups || echo 'groups fehlgeschlagen'
+
 echo '--- /dev/kfd ---'
 ls -l /dev/kfd || echo 'Nicht vorhanden'
 
@@ -57,7 +60,4 @@ rocminfo || echo 'rocminfo fehlgeschlagen'
 
 echo '--- clinfo ---'
 clinfo || echo 'clinfo fehlgeschlagen'
-
-echo '--- groups ---'
-groups || echo 'groups fehlgeschlagen'
 "
