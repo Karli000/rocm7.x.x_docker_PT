@@ -57,4 +57,7 @@ rocminfo || echo 'rocminfo fehlgeschlagen'
 
 echo '--- clinfo ---'
 clinfo || echo 'clinfo fehlgeschlagen'
+
+echo '--- groups ---'
+groups || echo 'groups fehlgeschlagen'
 "
