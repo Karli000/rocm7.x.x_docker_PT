@@ -61,7 +61,7 @@ echo "$@" | grep -q -- "-i" && INTERACTIVE_FLAGS+=("-i")
 echo "$@" | grep -q -- "-t" && INTERACTIVE_FLAGS+=("-t")
 
 # Container-Name ermitteln
-CONTAINER_NAME=$(echo "$@" | grep -oP '(?<=--name )\S+' || echo "")
+CONTAINER_ID=$(echo "$@" | grep -oP '(?<=--name )\S+' || echo "")
 
 # Start-Befehl vorbereiten
 START_CMD="$REAL_DOCKER run ${INTERACTIVE_FLAGS[@]} ${EXTRA_FLAGS[@]} $@"
