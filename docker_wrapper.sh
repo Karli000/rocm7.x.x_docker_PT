@@ -19,10 +19,9 @@ echo "=== Schritt 2: Docker-Wrapper installieren ==="
 sudo tee /usr/local/bin/docker > /dev/null << 'EOF'
 #!/bin/bash
 
-# Finde den echten Docker-Pfad (ignoriere /usr/local/bin)
+# Finde den echten Docker-Pfad
+# -------------------------
 REAL_DOCKER=$(which -a docker | grep -v "^/usr/local/bin/" | head -n1)
-
-# Fallback: Durchsuche bekannte Pfade
 if [ -z "$REAL_DOCKER" ] || [ ! -x "$REAL_DOCKER" ]; then
     if [ -x "/usr/bin/docker" ]; then
         REAL_DOCKER="/usr/bin/docker"
@@ -34,23 +33,32 @@ if [ -z "$REAL_DOCKER" ] || [ ! -x "$REAL_DOCKER" ]; then
     fi
 fi
 
+# -------------------------
+# Wenn kein 'run', einfach weiterleiten
+# -------------------------
 if [ "$1" != "run" ]; then
     exec "$REAL_DOCKER" "$@"
 fi
 
-shift
+shift  # "run" wegsieben
 
-# Hole die Group-IDs vom Host-System
+# -------------------------
+# Host-GIDs holen
+# -------------------------
 VIDEO_GID=$(getent group video | cut -d: -f3)
 RENDER_GID=$(getent group render | cut -d: -f3)
 
-# Einfache Duplikat-Prüfung
+# -------------------------
+# Basis-Flags prüfen / setzen
+# -------------------------
 EXTRA_FLAGS=()
 echo "$@" | grep -q -- "--device.*/dev/dri" || EXTRA_FLAGS+=(--device "/dev/dri")
 echo "$@" | grep -q -- "--device.*/dev/kfd" || EXTRA_FLAGS+=(--device "/dev/kfd")
 echo "$@" | grep -q -- "--security-opt.*seccomp" || EXTRA_FLAGS+=(--security-opt "seccomp=unconfined")
 
-# GIDs dem Container hinzufügen
+# -------------------------
+# GIDs hinzufügen
+# -------------------------
 [ -n "$VIDEO_GID" ] && EXTRA_FLAGS+=(--group-add "$VIDEO_GID")
 [ -n "$RENDER_GID" ] && EXTRA_FLAGS+=(--group-add "$RENDER_GID")
 
@@ -61,16 +69,12 @@ CONTAINER_NAME=$(echo "$@" | grep -oP '(?<=--name )\S+' || echo "")
 $REAL_DOCKER run "${EXTRA_FLAGS[@]}" "$@" &
 
 # -------------------------
-# Warten bis Container läuft, dann Gruppen anlegen
+# Optional: Gruppen im Container anlegen (falls GID existiert, wird übersprungen)
 # -------------------------
 if [ -n "$CONTAINER_NAME" ]; then
-    sleep 2  # kurz warten, bis Container läuft
-    if [ -n "$VIDEO_GID" ]; then
-        $REAL_DOCKER exec "$CONTAINER_NAME" groupadd -g "$VIDEO_GID" video 2>/dev/null || true
-    fi
-    if [ -n "$RENDER_GID" ]; then
-        $REAL_DOCKER exec "$CONTAINER_NAME" groupadd -g "$RENDER_GID" render 2>/dev/null || true
-    fi
+    sleep 2
+    [ -n "$VIDEO_GID" ] && $REAL_DOCKER exec "$CONTAINER_NAME" groupadd -g "$VIDEO_GID" video 2>/dev/null || true
+    [ -n "$RENDER_GID" ] && $REAL_DOCKER exec "$CONTAINER_NAME" groupadd -g "$RENDER_GID" render 2>/dev/null || true
 fi
 exec "$REAL_DOCKER" run "${EXTRA_FLAGS[@]}" "$@"
 EOF
