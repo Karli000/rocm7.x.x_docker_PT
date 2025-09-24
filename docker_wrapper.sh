@@ -76,7 +76,6 @@ if [ -n "$CONTAINER_NAME" ]; then
     [ -n "$VIDEO_GID" ] && $REAL_DOCKER exec "$CONTAINER_NAME" groupadd -g "$VIDEO_GID" video 2>/dev/null || true
     [ -n "$RENDER_GID" ] && $REAL_DOCKER exec "$CONTAINER_NAME" groupadd -g "$RENDER_GID" render 2>/dev/null || true
 fi
-exec "$REAL_DOCKER" run "${EXTRA_FLAGS[@]}" "$@"
 EOF
 
 sudo chmod +x /usr/local/bin/docker
