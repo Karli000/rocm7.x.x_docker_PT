@@ -46,54 +46,26 @@ shift  # "run" entfernen
 
 # -------------------------
 # Host-GIDs holen
-# -------------------------
 VIDEO_GID=$(getent group video | cut -d: -f3)
 RENDER_GID=$(getent group render | cut -d: -f3)
 
-# -------------------------
-# Basis-Flags prüfen / setzen
-# -------------------------
+# Basis-Flags
 EXTRA_FLAGS=()
 echo "$@" | grep -q -- "--device.*/dev/dri" || EXTRA_FLAGS+=(--device "/dev/dri")
 echo "$@" | grep -q -- "--device.*/dev/kfd" || EXTRA_FLAGS+=(--device "/dev/kfd")
 echo "$@" | grep -q -- "--security-opt.*seccomp" || EXTRA_FLAGS+=(--security-opt "seccomp=unconfined")
 
-# -------------------------
 # GIDs hinzufügen
-# -------------------------
 [ -n "$VIDEO_GID" ] && EXTRA_FLAGS+=(--group-add "$VIDEO_GID")
 [ -n "$RENDER_GID" ] && EXTRA_FLAGS+=(--group-add "$RENDER_GID")
 
-# -------------------------
-# Prüfen, ob -it schon im Aufruf vorhanden ist
-# -------------------------
+# Interaktiv prüfen
 INTERACTIVE_FLAGS=()
-if echo "$@" | grep -q -- "-i"; then INTERACTIVE_FLAGS+=("-i"); fi
-if echo "$@" | grep -q -- "-t"; then INTERACTIVE_FLAGS+=("-t"); fi
+echo "$@" | grep -q -- "-i" && INTERACTIVE_FLAGS+=("-i")
+echo "$@" | grep -q -- "-t" && INTERACTIVE_FLAGS+=("-t")
 
-# -------------------------
-# Container-Name ermitteln
-# -------------------------
-CONTAINER_NAME=$(echo "$@" | grep -oP '(?<=--name )\S+' || echo "")
-
-# -------------------------
-# Container starten
-# -------------------------
-# Wenn -d verwendet wird, im Hintergrund starten, sonst interaktiv
-if echo "$@" | grep -q -- "\-d"; then
-    $REAL_DOCKER run "${INTERACTIVE_FLAGS[@]}" "${EXTRA_FLAGS[@]}" "$@" 
-else
-    exec $REAL_DOCKER run "${INTERACTIVE_FLAGS[@]}" "${EXTRA_FLAGS[@]}" "$@" 
-fi
-
-# -------------------------
-# Optional: Gruppen im Container anlegen (falls GID existiert, wird übersprungen)
-# -------------------------
-if [ -n "$CONTAINER_NAME" ]; then
-    sleep 2
-    [ -n "$VIDEO_GID" ] && $REAL_DOCKER exec "$CONTAINER_NAME" groupadd -g "$VIDEO_GID" video 2>/dev/null || true
-    [ -n "$RENDER_GID" ] && $REAL_DOCKER exec "$CONTAINER_NAME" groupadd -g "$RENDER_GID" render 2>/dev/null || true
-fi
+# Container starten (immer direkt)
+exec $REAL_DOCKER run "${INTERACTIVE_FLAGS[@]}" "${EXTRA_FLAGS[@]}" "$@"
 
 EOF
 
