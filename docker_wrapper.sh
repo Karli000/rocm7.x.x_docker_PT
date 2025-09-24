@@ -22,7 +22,6 @@ sudo tee /usr/local/bin/docker > /dev/null << 'EOF'
 #!/bin/bash
 
 # Finde den echten Docker-Pfad
-# -------------------------
 REAL_DOCKER=$(which -a docker | grep -v "^/usr/local/bin/" | head -n1)
 if [ -z "$REAL_DOCKER" ] || [ ! -x "$REAL_DOCKER" ]; then
     if [ -x "/usr/bin/docker" ]; then
@@ -35,16 +34,13 @@ if [ -z "$REAL_DOCKER" ] || [ ! -x "$REAL_DOCKER" ]; then
     fi
 fi
 
-# -------------------------
 # Wenn kein 'run', einfach weiterleiten
-# -------------------------
 if [ "$1" != "run" ]; then
     exec "$REAL_DOCKER" "$@"
 fi
 
 shift  # "run" entfernen
 
-# -------------------------
 # Host-GIDs holen
 VIDEO_GID=$(getent group video | cut -d: -f3)
 RENDER_GID=$(getent group render | cut -d: -f3)
@@ -64,9 +60,25 @@ INTERACTIVE_FLAGS=()
 echo "$@" | grep -q -- "-i" && INTERACTIVE_FLAGS+=("-i")
 echo "$@" | grep -q -- "-t" && INTERACTIVE_FLAGS+=("-t")
 
-# Container starten (immer direkt)
-exec $REAL_DOCKER run "${INTERACTIVE_FLAGS[@]}" "${EXTRA_FLAGS[@]}" "$@"
+# Container-Name ermitteln
+CONTAINER_NAME=$(echo "$@" | grep -oP '(?<=--name )\S+' || echo "")
 
+# Start-Befehl vorbereiten
+START_CMD="$REAL_DOCKER run ${INTERACTIVE_FLAGS[@]} ${EXTRA_FLAGS[@]} $@"
+
+# Container starten
+if echo "$@" | grep -q -- "\-d"; then
+    CONTAINER_ID=$($START_CMD)
+else
+    exec $START_CMD
+fi
+
+# Gruppen im Container anlegen (falls Name oder ID bekannt)
+if [ -n "$CONTAINER_NAME" ]; then
+    sleep 2
+    [ -n "$VIDEO_GID" ] && $REAL_DOCKER exec "$CONTAINER_NAME" sh -c "getent group $VIDEO_GID || groupadd -g $VIDEO_GID video"
+    [ -n "$RENDER_GID" ] && $REAL_DOCKER exec "$CONTAINER_NAME" sh -c "getent group $RENDER_GID || groupadd -g $RENDER_GID render"
+fi
 EOF
 
 sudo chmod +x /usr/local/bin/docker
