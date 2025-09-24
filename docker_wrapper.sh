@@ -42,7 +42,7 @@ if [ "$1" != "run" ]; then
     exec "$REAL_DOCKER" "$@"
 fi
 
-shift  # "run" wegsieben
+shift  # "run" entfernen
 
 # -------------------------
 # Host-GIDs holen
@@ -68,12 +68,8 @@ echo "$@" | grep -q -- "--security-opt.*seccomp" || EXTRA_FLAGS+=(--security-opt
 # Prüfen, ob -it schon im Aufruf vorhanden ist
 # -------------------------
 INTERACTIVE_FLAGS=()
-if echo "$@" | grep -q -- "-i"; then
-    INTERACTIVE_FLAGS+=("-i")
-fi
-if echo "$@" | grep -q -- "-t"; then
-    INTERACTIVE_FLAGS+=("-t")
-fi
+if echo "$@" | grep -q -- "-i"; then INTERACTIVE_FLAGS+=("-i"); fi
+if echo "$@" | grep -q -- "-t"; then INTERACTIVE_FLAGS+=("-t"); fi
 
 # -------------------------
 # Container-Name ermitteln
@@ -83,7 +79,12 @@ CONTAINER_NAME=$(echo "$@" | grep -oP '(?<=--name )\S+' || echo "")
 # -------------------------
 # Container starten
 # -------------------------
-$REAL_DOCKER run "${INTERACTIVE_FLAGS[@]}" "${EXTRA_FLAGS[@]}" "$@" &
+# Wenn -d verwendet wird, im Hintergrund starten, sonst interaktiv
+if echo "$@" | grep -q -- "\-d"; then
+    $REAL_DOCKER run "${INTERACTIVE_FLAGS[@]}" "${EXTRA_FLAGS[@]}" "$@" 
+else
+    exec $REAL_DOCKER run "${INTERACTIVE_FLAGS[@]}" "${EXTRA_FLAGS[@]}" "$@" 
+fi
 
 # -------------------------
 # Optional: Gruppen im Container anlegen (falls GID existiert, wird übersprungen)
