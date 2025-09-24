@@ -19,6 +19,8 @@ echo "=== Schritt 2: Docker-Wrapper installieren ==="
 sudo tee /usr/local/bin/docker > /dev/null << 'EOF'
 #!/bin/bash
 
+#!/bin/bash
+
 # Finde den echten Docker-Pfad
 # -------------------------
 REAL_DOCKER=$(which -a docker | grep -v "^/usr/local/bin/" | head -n1)
@@ -63,10 +65,25 @@ echo "$@" | grep -q -- "--security-opt.*seccomp" || EXTRA_FLAGS+=(--security-opt
 [ -n "$RENDER_GID" ] && EXTRA_FLAGS+=(--group-add "$RENDER_GID")
 
 # -------------------------
-# Container starten
+# Prüfen, ob -it schon im Aufruf vorhanden ist
+# -------------------------
+INTERACTIVE_FLAGS=()
+if echo "$@" | grep -q -- "-i"; then
+    INTERACTIVE_FLAGS+=("-i")
+fi
+if echo "$@" | grep -q -- "-t"; then
+    INTERACTIVE_FLAGS+=("-t")
+fi
+
+# -------------------------
+# Container-Name ermitteln
 # -------------------------
 CONTAINER_NAME=$(echo "$@" | grep -oP '(?<=--name )\S+' || echo "")
-$REAL_DOCKER run "${EXTRA_FLAGS[@]}" "$@" &
+
+# -------------------------
+# Container starten
+# -------------------------
+$REAL_DOCKER run "${INTERACTIVE_FLAGS[@]}" "${EXTRA_FLAGS[@]}" "$@" &
 
 # -------------------------
 # Optional: Gruppen im Container anlegen (falls GID existiert, wird übersprungen)
@@ -76,6 +93,7 @@ if [ -n "$CONTAINER_NAME" ]; then
     [ -n "$VIDEO_GID" ] && $REAL_DOCKER exec "$CONTAINER_NAME" groupadd -g "$VIDEO_GID" video 2>/dev/null || true
     [ -n "$RENDER_GID" ] && $REAL_DOCKER exec "$CONTAINER_NAME" groupadd -g "$RENDER_GID" render 2>/dev/null || true
 fi
+
 EOF
 
 sudo chmod +x /usr/local/bin/docker
