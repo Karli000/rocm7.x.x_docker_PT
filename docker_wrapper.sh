@@ -21,7 +21,8 @@ sudo tee /usr/local/bin/docker > /dev/null << 'EOF'
 
 #!/bin/bash
 
-# Finde den echten Docker-Pfad
+# Echten Docker-Pfad finden
+# -------------------------
 REAL_DOCKER=$(which -a docker | grep -v "^/usr/local/bin/" | head -n1)
 if [ -z "$REAL_DOCKER" ] || [ ! -x "$REAL_DOCKER" ]; then
     if [ -x "/usr/bin/docker" ]; then
@@ -34,18 +35,23 @@ if [ -z "$REAL_DOCKER" ] || [ ! -x "$REAL_DOCKER" ]; then
     fi
 fi
 
-# Wenn kein 'run', einfach weiterleiten
+# -------------------------
+# Nur weiterleiten, wenn nicht "run"
+# -------------------------
 if [ "$1" != "run" ]; then
     exec "$REAL_DOCKER" "$@"
 fi
-
 shift  # "run" entfernen
 
+# -------------------------
 # Host-GIDs holen
+# -------------------------
 VIDEO_GID=$(getent group video | cut -d: -f3)
 RENDER_GID=$(getent group render | cut -d: -f3)
 
-# Basis-Flags
+# -------------------------
+# Basis-Flags setzen
+# -------------------------
 EXTRA_FLAGS=()
 echo "$@" | grep -q -- "--device.*/dev/dri" || EXTRA_FLAGS+=(--device "/dev/dri")
 echo "$@" | grep -q -- "--device.*/dev/kfd" || EXTRA_FLAGS+=(--device "/dev/kfd")
@@ -55,29 +61,15 @@ echo "$@" | grep -q -- "--security-opt.*seccomp" || EXTRA_FLAGS+=(--security-opt
 [ -n "$VIDEO_GID" ] && EXTRA_FLAGS+=(--group-add "$VIDEO_GID")
 [ -n "$RENDER_GID" ] && EXTRA_FLAGS+=(--group-add "$RENDER_GID")
 
-# Interaktiv prüfen
+# Interaktiv Flags prüfen
 INTERACTIVE_FLAGS=()
 echo "$@" | grep -q -- "-i" && INTERACTIVE_FLAGS+=("-i")
 echo "$@" | grep -q -- "-t" && INTERACTIVE_FLAGS+=("-t")
 
-# Container-Name ermitteln
-CONTAINER_ID=$(echo "$@" | grep -oP '(?<=--name )\S+' || echo "")
-
-# Start-Befehl vorbereiten
-START_CMD="$REAL_DOCKER run ${INTERACTIVE_FLAGS[@]} ${EXTRA_FLAGS[@]} $@"
-
+# -------------------------
 # Container starten
-if echo "$@" | grep -q -- "\-d"; then
-    CONTAINER_ID=$($START_CMD)
-else
-    exec $START_CMD
-fi
-
-# Gruppen im Container anlegen (falls Name oder ID bekannt)
-if [ -n "$CONTAINER_ID" ]; then
-    sleep 2
-    [ -n "$VIDEO_GID" ] && $REAL_DOCKER exec "$CONTAINER_ID" sh -c "getent group $VIDEO_GID || groupadd -g $VIDEO_GID video"
-    [ -n "$RENDER_GID" ] && $REAL_DOCKER exec "$CONTAINER_ID" sh -c "getent group $RENDER_GID || groupadd -g $RENDER_GID render"
+# -------------------------
+exec $REAL_DOCKER run "${INTERACTIVE_FLAGS[@]}" "${EXTRA_FLAGS[@]}" "$@"
 fi
 EOF
 
