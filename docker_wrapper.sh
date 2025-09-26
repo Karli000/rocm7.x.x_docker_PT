@@ -52,7 +52,6 @@ echo "$@" | grep -q -- "--ipc"              || EXTRA_FLAGS+=(--ipc=host)
 echo "$@" | grep -q -- "--cap-add=SYS_PTRACE" || EXTRA_FLAGS+=(--cap-add=SYS_PTRACE)
 echo "$@" | grep -q -- "--security-opt"     || EXTRA_FLAGS+=(--security-opt=seccomp=unconfined)
 echo "$@" | grep -q -- "--shm-size"         || EXTRA_FLAGS+=(--shm-size=16G)
-echo "$@" | grep -q -- "-w"                 || echo "$@" | grep -q -- "--workdir" || EXTRA_FLAGS+=(-w /workspace)
 
 # -------------------------
 # Container starten
