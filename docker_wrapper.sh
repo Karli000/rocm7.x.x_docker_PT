@@ -58,6 +58,19 @@ echo "$@" | grep -q -- "--cap-add=SYS_PTRACE" || EXTRA_FLAGS+=(--cap-add=SYS_PTR
 echo "$@" | grep -q -- "--security-opt"     || EXTRA_FLAGS+=(--security-opt=seccomp=unconfined)
 echo "$@" | grep -q -- "--shm-size"         || EXTRA_FLAGS+=(--shm-size=16G)
 
+# MultigPU: alle relevanten Devices automatisch durchreichen
+for dev in /dev/dri/card* /dev/dri/renderD* /dev/kfd; do
+  [ -e "$dev" ] && echo "$@" | grep -q -- "--device=$dev" || EXTRA_FLAGS+=(--device="$dev")
+done
+
+# GIDs für video, render, docker automatisch ergänzen
+for GRP in video render docker; do
+  GID=$(getent group "$GRP" | cut -d: -f3)
+  if [ -n "$GID" ]; then
+    echo "$@" | grep -q -- "--group-add $GID" || EXTRA_FLAGS+=(--group-add "$GID")
+  fi
+done
+
 # -------------------------
 # Container starten
 exec "$REAL_DOCKER" run "${EXTRA_FLAGS[@]}" "$@"
