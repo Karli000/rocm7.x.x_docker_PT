@@ -32,7 +32,7 @@ bash <(curl -s https://raw.githubusercontent.com/Karli000/rocm7.x.x_docker_PT/ma
 ```
 ```bash
 #AMD-GPU-FAN
-bash <(https://raw.githubusercontent.com/Karli000/rocm7.x.x_docker_PT/main/setup_gpu_fan.sh)
+bash <(curl -s https://raw.githubusercontent.com/Karli000/rocm7.x.x_docker_PT/main/setup_gpu_fan.sh)
 ```
 ```
 #test
