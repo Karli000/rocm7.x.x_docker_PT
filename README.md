@@ -35,7 +35,7 @@ bash <(curl -s https://raw.githubusercontent.com/Karli000/rocm7.x.x_docker_PT/ma
 bash <(curl -s https://raw.githubusercontent.com/Karli000/rocm7.x.x_docker_PT/main/setup_gpu_fan.sh)
 ```
 ```
-#test
+#test-Host-Server
 ls -l /dev/kfd && ls -l /dev/dri && rocminfo && clinfo
 ```
 ```bash
