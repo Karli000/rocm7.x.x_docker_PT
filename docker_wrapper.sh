@@ -16,6 +16,11 @@ else
 fi
 
 echo "=== Schritt 2: Docker-Wrapper installieren ==="
+# Verzeichnis sicherstellen
+sudo mkdir -p /usr/local/bin
+# Alte Wrapper-Datei löschen, falls vorhanden
+sudo rm -f /usr/local/bin/docker
+
 sudo tee /usr/local/bin/docker > /dev/null << 'EOF'
 #!/bin/bash
 
