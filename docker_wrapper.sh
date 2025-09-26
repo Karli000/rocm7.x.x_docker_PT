@@ -42,23 +42,21 @@ fi
 shift  # "run" entfernen
 
 # -------------------------
-# Host-GIDs holen
-VIDEO_GID=$(getent group video | cut -d: -f3)
-RENDER_GID=$(getent group render | cut -d: -f3)
-
-# -------------------------
-# Basis-Flags (nur hinzufügen, wenn noch nicht vorhanden)
+# GPU-Flags, die ergänzt werden sollen
 EXTRA_FLAGS=()
-echo "$@" | grep -q -- "--device.*/dev/dri" || EXTRA_FLAGS+=(--device "/dev/dri")
-echo "$@" | grep -q -- "--device.*/dev/kfd" || EXTRA_FLAGS+=(--device "/dev/kfd")
-echo "$@" | grep -q -- "--security-opt.*seccomp" || EXTRA_FLAGS+=(--security-opt "seccomp=unconfined")
-[ -n "$VIDEO_GID" ] && echo "$@" | grep -q -- "--group-add $VIDEO_GID" || EXTRA_FLAGS+=(--group-add "$VIDEO_GID")
-[ -n "$RENDER_GID" ] && echo "$@" | grep -q -- "--group-add $RENDER_GID" || EXTRA_FLAGS+=(--group-add "$RENDER_GID")
+echo "$@" | grep -q -- "--privileged"       || EXTRA_FLAGS+=(--privileged)
+echo "$@" | grep -q -- "--network"          || EXTRA_FLAGS+=(--network=host)
+echo "$@" | grep -q -- "--device=/dev/kfd"  || EXTRA_FLAGS+=(--device=/dev/kfd)
+echo "$@" | grep -q -- "--device=/dev/dri"  || EXTRA_FLAGS+=(--device=/dev/dri)
+echo "$@" | grep -q -- "--ipc"              || EXTRA_FLAGS+=(--ipc=host)
+echo "$@" | grep -q -- "--cap-add=SYS_PTRACE" || EXTRA_FLAGS+=(--cap-add=SYS_PTRACE)
+echo "$@" | grep -q -- "--security-opt"     || EXTRA_FLAGS+=(--security-opt=seccomp=unconfined)
+echo "$@" | grep -q -- "--shm-size"         || EXTRA_FLAGS+=(--shm-size=16G)
+echo "$@" | grep -q -- "-w"                 || echo "$@" | grep -q -- "--workdir" || EXTRA_FLAGS+=(-w /workspace)
 
 # -------------------------
 # Container starten
-exec $REAL_DOCKER run "${EXTRA_FLAGS[@]}" "$@"
-fi
+exec "$REAL_DOCKER" run "${EXTRA_FLAGS[@]}" "$@"
 EOF
 
 sudo chmod +x /usr/local/bin/docker
