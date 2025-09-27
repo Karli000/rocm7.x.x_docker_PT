@@ -16,7 +16,7 @@
 
 - Creates `/usr/local/bin/amd-docker`
 - Automatically adds GPU devices and group permissions when using `docker run`
-- Bash function replaces `docker run` with `amd-docker run`
+
 
 ---
 
