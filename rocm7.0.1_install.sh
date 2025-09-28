@@ -36,7 +36,7 @@ sudo apt install -y ./amdgpu-install_7.0.1.70001-1_all.deb
 sudo apt update
 sudo apt install -y python3-setuptools python3-wheel
 sudo apt install -y "linux-headers-$(uname -r)" "linux-modules-extra-$(uname -r)"
-sudo apt install -y amdgpu-dkms rocm rocm-hip-libraries rocm-hip-runtime rocm-language-runtime rocm-ml-libraries rocm-opencl-runtime amdgpu-lib rocm-developer-tools rocm-hip-sdk rocm-ml-sdk rocm-opencl-sdk rocm-openmp-sdk vulkan-tools libvulkan-dev mesa-utils xserver-xorg-video-amdgpu libdrm-amdgpu1 mesa-opencl-icd
+sudo apt install -y amdgpu-dkms rocm rocm-hip-libraries rocm-hip-runtime rocm-language-runtime rocm-ml-libraries rocm-opencl-runtime amdgpu-lib rocm-developer-tools rocm-hip-sdk rocm-ml-sdk rocm-opencl-sdk rocm-openmp-sdk vulkan-tools libvulkan-dev mesa-utils xserver-xorg-video-amdgpu libdrm-amdgpu1 mesa-amdgpu-vulkan-drivers mesa-opencl-icd
 
 echo "=== Schritt 4: ROCm Pfade konfigurieren ==="
 sudo tee --append /etc/ld.so.conf.d/rocm.conf <<EOF
