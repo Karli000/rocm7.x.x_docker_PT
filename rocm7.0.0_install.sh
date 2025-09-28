@@ -37,12 +37,12 @@ sudo apt update
 sudo apt install -y python3-setuptools python3-wheel
 sudo apt install -y "linux-headers-$(uname -r)" "linux-modules-extra-$(uname -r)"
 sudo apt install -y amdgpu-dkms amdgpu-lib xserver-xorg-video-amdgpu libdrm-amdgpu1 \
-  rocm rocm-hip-runtime rocm-hip-libraries rocm-hip-sdk rocm-ml-libraries rocm-ml-sdk \
-  rocm-opencl-runtime rocm-opencl-sdk mesa-opencl-icd clinfo \
-  rocm-openmp-sdk rocm-language-runtime rocm-developer-tools rocm-utils rocm-smi rocminfo \
-  rocblas rocfft rocrand miopen-hip rocm-device-libs hipcc llvm-amdgpu \
-  vulkan-tools libvulkan-dev mesa-amdgpu-vulkan-drivers mesa-utils \
-  cmake git python3-pip python3-venv build-essential
+                    rocm rocm-hip-runtime rocm-hip-libraries rocm-hip-sdk rocm-ml-libraries rocm-ml-sdk \
+                    rocm-opencl-runtime rocm-opencl-sdk mesa-opencl-icd clinfo \
+                    rocm-openmp-sdk rocm-language-runtime rocm-developer-tools rocm-utils rocm-smi rocminfo \
+                    rocblas rocfft rocrand miopen-hip rocm-device-libs hipcc llvm-amdgpu \
+                    vulkan-tools libvulkan-dev mesa-amdgpu-vulkan-drivers mesa-utils \
+                    cmake git python3-pip python3-venv build-essential
 
 echo "=== Schritt 4: ROCm Pfade konfigurieren ==="
 sudo tee --append /etc/ld.so.conf.d/rocm.conf <<EOF
