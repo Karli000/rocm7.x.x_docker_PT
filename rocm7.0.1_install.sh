@@ -85,5 +85,29 @@ export PATH=\$PATH:/opt/rocm-7.0.1/bin
 export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/opt/rocm-7.0.1/lib
 EOF
 
+# --- Cleanup ---
+rm -f amdgpu-insecure-instinct-udev-rules_*.deb amdgpu-install_*.deb
+
+# --- Testausgabe ---
+echo "=== ROCm / GPU Funktionstest ==="
+
+if command -v /opt/rocm-7.0.1/bin/rocminfo >/dev/null && /opt/rocm-7.0.1/bin/rocminfo >/dev/null 2>&1; then
+  echo "rocminfo: verfügbar ✅"
+else
+  echo "rocminfo: nicht gefunden ❌"
+fi
+
+if command -v clinfo >/dev/null && clinfo >/dev/null 2>&1; then
+  echo "clinfo: verfügbar ✅"
+else
+  echo "clinfo: nicht gefunden ❌"
+fi
+
+if command -v vulkaninfo >/dev/null && vulkaninfo >/dev/null 2>&1; then
+  echo "vulkaninfo: verfügbar ✅"
+else
+  echo "vulkaninfo: nicht gefunden ❌"
+fi
+
 echo "✅ Setup abgeschlossen."
 echo "Bitte starte das System manuell neu, wenn es dir passt."
